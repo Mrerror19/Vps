@@ -1,30 +1,17 @@
 FROM ubuntu:22.04
 
+USER root
 ENV DEBIAN_FRONTEND=noninteractive
-ENV HOSTNAME=Nobita
 
-# ---- Base packages (ONE shot, ONE layer) ----
-RUN apt-get update && apt-get install -y --no-install-recommends \
- ca-certificates \
- curl \
- wget \
- git \
- sudo \
- docker.io \
- htop \
- btop \
- neovim \
- lsof \
- qemu-system \
- cloud-image-utils \
- && rm -rf /var/lib/apt/lists/*
+RUN apt-get update && apt-get install -y \
+    curl wget sudo ttyd qemu-system-x86 qemu-kvm \
+    && rm -rf /var/lib/apt/lists/*
 
-# ---- Install code-server ----
-RUN curl -fsSL https://code-server.dev/install.sh | sh
+RUN useradd -m -u 1000 user && echo "user ALL=(ALL) NOPASSWD:ALL" >> /etc/sudoers
+USER user
+WORKDIR /home/user
 
-# ---- Workspace ----
-WORKDIR /workspace
+COPY --chown=user:user start.sh /home/user/start.sh
+RUN chmod +x /home/user/start.sh
 
-EXPOSE 7860
-
-CMD ["code-server", "--bind-addr", "0.0.0.0:7860", "--auth", "none"]
+ENTRYPOINT ["/home/user/start.sh"]
